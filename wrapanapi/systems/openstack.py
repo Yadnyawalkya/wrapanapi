@@ -950,12 +950,22 @@ class OpenstackSystem(System, VmMixin, TemplateMixin):
             lambda: all(map(lambda id: not self.volume_exists(id), ids)),
             delay=0.5, num_sec=timeout)
 
-    def volume_exists(self, id):
-        try:
-            self.capi.volumes.get(id)
-            return True
-        except cinder_exceptions.NotFound:
-            return False
+    def volume_exists(self, volume_id=None, volume_name=None):
+        """Check if volume exists on openstack"""
+        if volume_id is None and volume_name is None:
+            raise ValueError("Least 'volume_id' or 'volume_name' is required")
+        elif volume_id:
+            try:
+                self.capi.volumes.get(volume_id)
+                return True
+            except cinder_exceptions.NotFound:
+                return False
+        else:
+            for volume in self.capi.volumes.list():
+                if volume.name == volume_name:
+                    return True
+                else:
+                    return False
 
     def get_volume(self, id):
         return self.capi.volumes.get(id)
